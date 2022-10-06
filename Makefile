@@ -16,7 +16,7 @@ init_web:
 	cd web && yarn install
 
 container:
-	docker build -t gempir/justlog .
+	docker build -t mxyns/justlog .
 
 run_container:
 	docker run -p 8025:8025 --restart=unless-stopped -v $(PWD)/config.json:/etc/justlog.json -v $(PWD)/logs:/logs gempir/justlog:latest
