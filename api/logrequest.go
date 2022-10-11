@@ -40,7 +40,7 @@ var (
 	pathRegex = regexp.MustCompile(`\/(channel|channelid)\/(\w+)(?:\/(user|userid)\/(\w+))?(?:(?:\/(\d{4})\/(\d{1,2})(?:\/(\d{1,2}))?)|(?:\/(random)))?`)
 )
 
-func (s *Server) newLogRequestFromURL(r *http.Request) (logRequest, error) {
+func (s *Server) newLogRequestFromURL(r *http.Request, noRedirect bool) (logRequest, error) {
 	path := r.URL.EscapedPath()
 
 	if path != strings.ToLower(path) {
@@ -132,6 +132,10 @@ func (s *Server) newLogRequestFromURL(r *http.Request) (logRequest, error) {
 		encodedQuery := ""
 		if query.Encode() != "" {
 			encodedQuery = "?" + query.Encode()
+		}
+
+		if noRedirect {
+			return request, nil
 		}
 
 		return logRequest{redirectPath: fmt.Sprintf("%s/%s%s", params[0], timePath, encodedQuery)}, nil

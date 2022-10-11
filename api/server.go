@@ -74,7 +74,17 @@ type AllChannelsJSON struct {
 
 // swagger:model
 type chatLog struct {
+	NextId   string        `json:"nextId"`
+	NextName string        `json:"nextName"`
 	Messages []chatMessage `json:"messages"`
+}
+
+// swagger:model
+type namedChatLogs struct {
+	Index       int           `json:"index"`
+	ChannelId   string        `json:"channelId"`
+	ChannelName string        `json:"channelName"`
+	Messages    []chatMessage `json:"messages"`
 }
 
 // swagger:model
@@ -126,8 +136,13 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if url == "/channels" {
+	if strings.TrimRight(url, "/") == "/channels" {
 		s.writeAllChannels(w, r)
+		return
+	}
+
+	if strings.HasPrefix(url, "/channels/") {
+		s.writeNamedLogs(w, r)
 		return
 	}
 
@@ -184,7 +199,7 @@ func (s *Server) fillUserids(w http.ResponseWriter, r *http.Request) url.Values 
 
 func (s *Server) routeLogs(w http.ResponseWriter, r *http.Request) bool {
 
-	request, err := s.newLogRequestFromURL(r)
+	request, err := s.newLogRequestFromURL(r, false)
 	if err != nil {
 		return false
 	}
@@ -315,6 +330,65 @@ func (s *Server) writeAllChannels(w http.ResponseWriter, r *http.Request) {
 	writeJSON(response, http.StatusOK, w, r)
 }
 
+// swagger:route GET /channels/{n} justlog channels
+//
+// Query logs from n-th channel in config
+//
+//	Produces:
+//	- application/json
+//
+//	Schemes: https
+//
+//	Responses:
+//	  200: namedChatLogs
+func (s *Server) writeNamedLogs(w http.ResponseWriter, r *http.Request) {
+
+	escapedPath := strings.TrimRight(r.URL.EscapedPath(), "/")
+	response := new(namedChatLogs)
+
+	shards := strings.Split(escapedPath, "/")
+	indexStr := shards[len(shards)-1]
+
+	index, err := strconv.Atoi(indexStr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	for i, chanId := range s.cfg.Channels {
+		if i == index {
+			response.Index = index
+			response.ChannelId = chanId
+			break
+		}
+	}
+
+	users, err := s.helixClient.GetUsersByUserIds([]string{response.ChannelId})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response.ChannelName = users[response.ChannelId].Login
+
+	url2, err := url.Parse(fmt.Sprintf("/channel/%v", response.ChannelName))
+	r2 := http.Request{URL: url2}
+
+	req, err := s.newLogRequestFromURL(&r2, true)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	chatLogs, err := s.getChannelLogs(req)
+	response.Messages = nil
+	if err == nil {
+		response.Messages = chatLogs.Messages
+	}
+
+	writeJSON(response, http.StatusOK, w, r)
+}
+
 func writeJSON(data interface{}, code int, w http.ResponseWriter, r *http.Request) {
 	js, err := json.Marshal(data)
 	if err != nil {
@@ -376,7 +450,7 @@ func (t *timestamp) UnmarshalJSON(data []byte) error {
 }
 
 func createLogResult() chatLog {
-	return chatLog{Messages: []chatMessage{}}
+	return chatLog{NextId: "", NextName: "", Messages: []chatMessage{}}
 }
 
 func parseFromTo(from, to string, limit float64) (time.Time, time.Time, error) {

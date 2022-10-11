@@ -99,6 +99,24 @@ func (s *Server) getChannelLogs(request logRequest) (*chatLog, error) {
 
 	logResult := createLogResult()
 
+	channelIndex := -1
+	for i, txt := range s.cfg.Channels {
+		if txt == request.channelid {
+			channelIndex = i
+			break
+		}
+	}
+
+	if channelIndex < len(s.cfg.Channels) {
+		logResult.NextId = s.cfg.Channels[channelIndex+1]
+		user, err := s.helixClient.GetUsersByUserIds([]string{logResult.NextId})
+		if err == nil {
+			logResult.NextName = user[logResult.NextId].Login
+		} else {
+			logResult.NextId = ""
+		}
+	}
+
 	for _, rawMessage := range logMessages {
 		logResult.Messages = append(logResult.Messages, createChatMessage(twitch.ParseMessage(rawMessage)))
 	}
