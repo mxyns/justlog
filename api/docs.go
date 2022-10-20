@@ -1,6 +1,6 @@
 // Package classification justlog API
 //
-// https://github.com/gempir/justlog
+// https://github.com/mxyns/justlog
 //
 //     Schemes: https
 //     BasePath: /

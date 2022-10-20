@@ -1,4 +1,4 @@
-module github.com/gempir/justlog
+module github.com/mxyns/justlog
 
 go 1.16
 
@@ -8,5 +8,3 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0 // indirect
 )
-
-replace github.com/gempir/justlog => github.com/mxyns/justlog v1.0.0

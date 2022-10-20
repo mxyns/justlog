@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gempir/justlog/config"
-	"github.com/gempir/justlog/filelog"
+	"github.com/mxyns/justlog/config"
+	"github.com/mxyns/justlog/filelog"
 
 	twitch "github.com/gempir/go-twitch-irc/v3"
-	"github.com/gempir/justlog/helix"
+	"github.com/mxyns/justlog/helix"
 	log "github.com/sirupsen/logrus"
 )
 

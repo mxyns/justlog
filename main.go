@@ -4,12 +4,12 @@ import (
 	"embed"
 	"flag"
 
-	"github.com/gempir/justlog/api"
-	"github.com/gempir/justlog/archiver"
-	"github.com/gempir/justlog/bot"
-	"github.com/gempir/justlog/config"
-	"github.com/gempir/justlog/filelog"
-	"github.com/gempir/justlog/helix"
+	"github.com/mxyns/justlog/api"
+	"github.com/mxyns/justlog/archiver"
+	"github.com/mxyns/justlog/bot"
+	"github.com/mxyns/justlog/config"
+	"github.com/mxyns/justlog/filelog"
+	"github.com/mxyns/justlog/helix"
 )
 
 // content holds our static web server content.

@@ -11,15 +11,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gempir/justlog/bot"
+	"github.com/mxyns/justlog/bot"
 
-	"github.com/gempir/justlog/config"
+	"github.com/mxyns/justlog/config"
 
-	"github.com/gempir/justlog/helix"
+	"github.com/mxyns/justlog/helix"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/gempir/go-twitch-irc/v3"
-	"github.com/gempir/justlog/filelog"
+	"github.com/mxyns/justlog/filelog"
 )
 
 // Server api server

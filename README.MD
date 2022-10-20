@@ -1,4 +1,4 @@
-# justlog [![Build Status](https://github.com/gempir/justlog/workflows/ci/badge.svg)](https://github.com/gempir/justlog/actions?query=workflow%3Aci)
+# justlog [![Build Status](https://github.com/mxyns/justlog/workflows/ci/badge.svg)](https://github.com/mxyns/justlog/actions?query=workflow%3Aci)
 
 ### What is this?
 Justlog is an twitch irc bot. It focuses on logging and providing an api for the logs.
@@ -16,7 +16,7 @@ API documentation can be viewed via the justlog frontend by clicking the "docs" 
 
 ```
 mkdir logs
-docker run -p 8025:8025 --restart=unless-stopped -v $PWD/config.json:/etc/justlog.json -v $PWD/logs:/logs ghcr.io/gempir/justlog
+docker run -p 8025:8025 --restart=unless-stopped -v $PWD/config.json:/etc/justlog.json -v $PWD/logs:/logs ghcr.io/mxyns/justlog
 ```
 
 ### Commands
