@@ -9,4 +9,4 @@ require (
 	github.com/stretchr/testify v1.7.0 // indirect
 )
 
-replace github.com/gempir/justlog => ../mxyns/justlog
+replace github.com/gempir/justlog => github.com/mxyns/justlog v1.0.0
