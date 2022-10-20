@@ -148,7 +148,7 @@ func loadConfiguration(filePath string) *Config {
 	cfg.LogsDirectory = strings.TrimSuffix(cfg.LogsDirectory, "/")
 	cfg.OAuth = strings.TrimPrefix(cfg.OAuth, "oauth:")
 	cfg.LogLevel = strings.ToLower(cfg.LogLevel)
-	cfg.setupLogger()
+	cfg.SetupLogger()
 
 	// ensure required
 	if cfg.ClientID == "" {
@@ -158,7 +158,7 @@ func loadConfiguration(filePath string) *Config {
 	return &cfg
 }
 
-func (cfg *Config) setupLogger() {
+func (cfg *Config) SetupLogger() {
 	switch cfg.LogLevel {
 	case "fatal":
 		log.SetLevel(log.FatalLevel)
