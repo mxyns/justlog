@@ -15,7 +15,7 @@ type Client struct {
 	clientID       string
 	clientSecret   string
 	appAccessToken string
-	client         *helixClient.Client
+	HelixClient    *helixClient.Client
 	httpClient     *http.Client
 }
 
@@ -27,9 +27,10 @@ var (
 type TwitchApiClient interface {
 	GetUsersByUserIds([]string) (map[string]UserData, error)
 	GetUsersByUsernames([]string) (map[string]UserData, error)
+	GetChannelInformationByChannelIds([]string) (map[string]ChannelData, error)
 }
 
-// NewClient Create helix client
+// NewClient Create helix Client
 func NewClient(clientID string, clientSecret string) Client {
 	client, err := helixClient.NewClient(&helixClient.Options{
 		ClientID:     clientID,
@@ -50,7 +51,7 @@ func NewClient(clientID string, clientSecret string) Client {
 		clientID:       clientID,
 		clientSecret:   clientSecret,
 		appAccessToken: resp.Data.AccessToken,
-		client:         client,
+		HelixClient:    client,
 		httpClient:     &http.Client{},
 	}
 }
@@ -69,19 +70,40 @@ type UserData struct {
 	Email           string `json:"email"`
 }
 
+type StreamStatus bool
+
+const (
+	StreamStatusUnknown = false
+	StreamStatusKnown   = true
+)
+
+// ChannelData exported data from twitch
+type ChannelData struct {
+	BroadcasterID       string           `json:"broadcaster_id"`
+	BroadcasterName     string           `json:"broadcaster_name"`
+	GameName            string           `json:"game_name"`
+	GameID              string           `json:"game_id"`
+	BroadcasterLanguage string           `json:"broadcaster_language"`
+	Title               string           `json:"title"`
+	Delay               int              `json:"integer"`
+	StreamStatus        StreamStatus     `json:"stream_status"`
+	IsLive              bool             `json:"is_live"`
+	StartedAt           helixClient.Time `json:"started_at"`
+}
+
 // StartRefreshTokenRoutine refresh our token
 func (c *Client) StartRefreshTokenRoutine() {
 	ticker := time.NewTicker(24 * time.Hour)
 
 	for range ticker.C {
-		resp, err := c.client.RequestAppAccessToken([]string{})
+		resp, err := c.HelixClient.RequestAppAccessToken([]string{})
 		if err != nil {
 			log.Error(err)
 			continue
 		}
 		log.Infof("Requested access token from routine, response: %d, expires in: %d", resp.StatusCode, resp.Data.ExpiresIn)
 
-		c.client.SetAppAccessToken(resp.Data.AccessToken)
+		c.HelixClient.SetAppAccessToken(resp.Data.AccessToken)
 	}
 }
 
@@ -107,7 +129,7 @@ func (c *Client) GetUsersByUserIds(userIDs []string) (map[string]UserData, error
 		chunks := chunkBy(filteredUserIDs, 100)
 
 		for _, chunk := range chunks {
-			resp, err := c.client.GetUsers(&helixClient.UsersParams{
+			resp, err := c.HelixClient.GetUsers(&helixClient.UsersParams{
 				IDs: chunk,
 			})
 			if err != nil {
@@ -164,7 +186,7 @@ func (c *Client) GetUsersByUsernames(usernames []string) (map[string]UserData, e
 		chunks := chunkBy(filteredUsernames, 100)
 
 		for _, chunk := range chunks {
-			resp, err := c.client.GetUsers(&helixClient.UsersParams{
+			resp, err := c.HelixClient.GetUsers(&helixClient.UsersParams{
 				Logins: chunk,
 			})
 			if err != nil {
@@ -202,6 +224,55 @@ func (c *Client) GetUsersByUsernames(usernames []string) (map[string]UserData, e
 			continue
 		}
 		result[username] = *(value.(*UserData))
+	}
+
+	return result, nil
+}
+
+// GetChannelInformationByChannelIds receive userData for given ids
+func (c *Client) GetChannelInformationByChannelIds(channelIds []string) (map[string]ChannelData, error) {
+
+	infoResp, err := c.HelixClient.GetChannelInformation(&helixClient.GetChannelInformationParams{
+		BroadcasterIDs: channelIds,
+	})
+
+	if err != nil {
+		return map[string]ChannelData{}, err
+	}
+
+	result := make(map[string]ChannelData)
+
+	for _, channel := range infoResp.Data.Channels {
+		data := ChannelData{
+			BroadcasterID:       channel.BroadcasterID,
+			BroadcasterName:     channel.BroadcasterName,
+			GameName:            channel.GameName,
+			GameID:              channel.GameID,
+			BroadcasterLanguage: channel.BroadcasterLanguage,
+			Title:               channel.Title,
+			Delay:               channel.Delay,
+			StreamStatus:        StreamStatusUnknown,
+			IsLive:              false,
+		}
+
+		if searchResp, err := c.HelixClient.SearchChannels(&helixClient.SearchChannelsParams{
+			Channel:  data.BroadcasterName,
+			After:    "",
+			First:    20,
+			LiveOnly: true,
+		}); err == nil {
+			for _, searchResult := range searchResp.Data.Channels {
+				if searchResult.ID != data.BroadcasterID || !searchResult.IsLive {
+					continue
+				}
+				data.StreamStatus = StreamStatusKnown
+				data.IsLive = searchResult.IsLive
+				data.StartedAt = searchResult.StartedAt
+				break
+			}
+		}
+
+		result[channel.BroadcasterID] = data
 	}
 
 	return result, nil
